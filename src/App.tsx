@@ -598,7 +598,7 @@ function App() {
               viewBox='0 0 28 28'
               fill='none'
               aria-hidden='true'
-              className='text-white/70'
+              className='text-crimson'
             >
               <path
                 d='M14 3L26 13v12H18v-7h-8v7H2V13L14 3z'
@@ -613,7 +613,7 @@ function App() {
               />
             </svg>
             <span>
-              <span className='font-bold'>pro</span>-perty.pl
+              <span className='text-crimson font-bold'>pro</span>-perty.pl
             </span>
           </a>
           <p className='text-[13px] m-0'>
