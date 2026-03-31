@@ -8,7 +8,7 @@ const listings = [
     price: '1 250 000 zł',
     area: '87 m²',
     rooms: 3,
-    type: 'Apartament',
+    type: 'Mieszkanie',
     badge: 'Nowe',
   },
   {
@@ -28,7 +28,7 @@ const listings = [
     price: '560 000 zł',
     area: '38 m²',
     rooms: 1,
-    type: 'Kawalerka',
+    type: 'Mieszkanie',
     badge: null,
   },
   {
@@ -38,7 +38,7 @@ const listings = [
     price: '5 200 000 zł',
     area: '175 m²',
     rooms: 4,
-    type: 'Penthouse',
+    type: 'Mieszkanie',
     badge: 'Ekskluzywne',
   },
   {
@@ -58,7 +58,7 @@ const listings = [
     price: '720 000 zł',
     area: '110 m²',
     rooms: 2,
-    type: 'Loft',
+    type: 'Mieszkanie',
     badge: 'Nowe',
   },
 ]
@@ -83,15 +83,20 @@ const inputCls =
 function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeFilter, setActiveFilter] = useState('Wszystkie')
+  const [roomsFrom, setRoomsFrom] = useState<number>(1)
+  const [roomsTo, setRoomsTo] = useState<number>(5)
 
-  const filters = ['Wszystkie', 'Mieszkanie', 'Dom', 'Apartament', 'Kawalerka']
+  const typeFilters = ['Wszystkie', 'Mieszkanie', 'Dom']
 
-  const filtered =
-    activeFilter === 'Wszystkie'
-      ? listings
-      : listings.filter(
-          (l) => l.type === activeFilter || l.type.includes(activeFilter),
-        )
+  const filtered = listings.filter((l) => {
+    if (activeFilter !== 'Wszystkie' && l.type !== activeFilter) return false
+    if (
+      activeFilter === 'Mieszkanie' &&
+      (l.rooms < roomsFrom || l.rooms > roomsTo)
+    )
+      return false
+    return true
+  })
 
   const statBorder = (i: number) =>
     [
@@ -295,20 +300,83 @@ function App() {
             Wybrane nieruchomości z najlepszych lokalizacji
           </p>
         </div>
-        <div className='flex gap-2 flex-wrap justify-center mb-10'>
-          {filters.map((f) => (
-            <button
-              key={f}
-              onClick={() => setActiveFilter(f)}
-              className={`px-5 py-2 rounded-full border-[1.5px] text-sm cursor-pointer transition-colors font-[inherit] ${
-                activeFilter === f
-                  ? 'bg-crimson border-crimson text-white'
-                  : 'bg-white border-[#e8e4de] text-[#5c5c5c] hover:border-crimson hover:text-crimson'
-              }`}
-            >
-              {f}
-            </button>
-          ))}
+        <div className='flex flex-col items-center gap-3 mb-10'>
+          <div className='flex gap-2 flex-wrap justify-center'>
+            {typeFilters.map((f) => (
+              <button
+                key={f}
+                onClick={() => {
+                  setActiveFilter(f)
+                  setRoomsFrom(1)
+                  setRoomsTo(5)
+                }}
+                className={`px-5 py-2 rounded-full border-[1.5px] text-sm cursor-pointer transition-colors font-[inherit] ${
+                  activeFilter === f
+                    ? 'bg-crimson border-crimson text-white'
+                    : 'bg-white border-[#e8e4de] text-[#5c5c5c] hover:border-crimson hover:text-crimson'
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          {activeFilter === 'Mieszkanie' && (
+            <div className='w-full max-w-sm px-2'>
+              <div className='flex justify-between mb-3'>
+                <span className='text-[13px] text-[#8a8a8a]'>Liczba pokoi</span>
+                <span className='text-[13px] font-semibold text-[#1a1a1a]'>
+                  {roomsFrom === 1 ? 'kawalerka' : `${roomsFrom} pok.`}
+                  {' – '}
+                  {roomsTo === 5
+                    ? '5+ pok.'
+                    : roomsTo === 1
+                      ? 'kawalerka'
+                      : `${roomsTo} pok.`}
+                </span>
+              </div>
+              <div
+                className='range-slider'
+                style={
+                  {
+                    '--from': `${((roomsFrom - 1) / 4) * 100}%`,
+                    '--to': `${((roomsTo - 1) / 4) * 100}%`,
+                  } as React.CSSProperties
+                }
+              >
+                <input
+                  type='range'
+                  min={1}
+                  max={5}
+                  step={1}
+                  value={roomsFrom}
+                  onChange={(e) => {
+                    const val = Number(e.target.value)
+                    setRoomsFrom(val)
+                    if (val > roomsTo) setRoomsTo(val)
+                  }}
+                />
+                <input
+                  type='range'
+                  min={1}
+                  max={5}
+                  step={1}
+                  value={roomsTo}
+                  onChange={(e) => {
+                    const val = Number(e.target.value)
+                    setRoomsTo(val)
+                    if (val < roomsFrom) setRoomsFrom(val)
+                  }}
+                />
+              </div>
+              <div className='flex justify-between mt-2'>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <span key={n} className='text-[11px] text-[#8a8a8a]'>
+                    {n === 1 ? 'kaw.' : n === 5 ? '5+' : n}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
           {filtered.map((listing) => (
@@ -351,7 +419,9 @@ function App() {
               </div>
               <div className='px-5 pt-[18px] pb-5'>
                 <div className='text-[12px] font-semibold tracking-[0.8px] uppercase text-crimson mb-1.5'>
-                  {listing.type}
+                  {listing.type === 'Mieszkanie'
+                    ? `Mieszkanie · ${listing.rooms === 1 ? 'kawalerka' : `${listing.rooms} pokoje`}`
+                    : listing.type}
                 </div>
                 <h3 className='text-[16px] font-semibold text-[#1a1a1a] mb-2 leading-snug'>
                   {listing.title}
