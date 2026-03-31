@@ -10,33 +10,52 @@
 @layer components {
   .range-slider {
     position: relative;
-    height: 6px;
-    border-radius: 9999px;
-    background: #e8e4de;
+    height: 20px;
+    background: transparent;
+    margin: 0 10px;
   }
 
+  /* szary tor — wyśrodkowany */
+  .range-slider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: #e8e4de;
+    border-radius: 9999px;
+  }
+
+  /* czerwony aktywny segment — wyśrodkowany */
   .range-slider::before {
     content: '';
     position: absolute;
-    height: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 6px;
     border-radius: 9999px;
     background: #c0272d;
     left: var(--from);
     right: calc(100% - var(--to));
+    z-index: 1;
   }
 
   .range-slider input[type='range'] {
     position: absolute;
-    width: 100%;
-    height: 6px;
-    top: 0;
-    left: 0;
+    width: calc(100% + 20px);
+    left: -10px;
+    height: 20px;
+    top: 50%;
+    transform: translateY(-50%);
     appearance: none;
     -webkit-appearance: none;
     background: transparent;
     pointer-events: none;
     margin: 0;
     padding: 0;
+    z-index: 2;
   }
 
   .range-slider input[type='range']::-webkit-slider-thumb {
@@ -50,7 +69,6 @@
     box-shadow: 0 1px 6px rgba(192, 39, 45, 0.35);
     cursor: pointer;
     pointer-events: all;
-    margin-top: -7px;
     transition: box-shadow 0.15s;
   }
 

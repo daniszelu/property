@@ -82,16 +82,48 @@ const inputCls =
 
 function App() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [activeFilter, setActiveFilter] = useState('Wszystkie')
+  const [activeTypes, setActiveTypes] = useState<Set<string>>(
+    new Set(['Mieszkanie', 'Dom', 'Pozostałe']),
+  )
   const [roomsFrom, setRoomsFrom] = useState<number>(1)
   const [roomsTo, setRoomsTo] = useState<number>(5)
 
-  const typeFilters = ['Wszystkie', 'Mieszkanie', 'Dom']
+  const typeFilters: Array<{ key: string; label: string }> = [
+    { key: 'Mieszkanie', label: 'Mieszkania' },
+    { key: 'Dom', label: 'Domy' },
+    { key: 'Pozostałe', label: 'Pozostałe' },
+  ]
+
+  const allSelected = activeTypes.size === 3
+
+  const toggleType = (key: string) => {
+    setActiveTypes((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) {
+        if (next.size === 1) return next // zostaw przynajmniej jeden
+        next.delete(key)
+      } else {
+        next.add(key)
+      }
+      return next
+    })
+    if (key !== 'Mieszkanie') {
+      setRoomsFrom(1)
+      setRoomsTo(5)
+    }
+  }
 
   const filtered = listings.filter((l) => {
-    if (activeFilter !== 'Wszystkie' && l.type !== activeFilter) return false
+    const cat =
+      l.type === 'Mieszkanie'
+        ? 'Mieszkanie'
+        : l.type === 'Dom'
+          ? 'Dom'
+          : 'Pozostałe'
+    if (!activeTypes.has(cat)) return false
     if (
-      activeFilter === 'Mieszkanie' &&
+      activeTypes.has('Mieszkanie') &&
+      cat === 'Mieszkanie' &&
       (l.rooms < roomsFrom || l.rooms > roomsTo)
     )
       return false
@@ -301,26 +333,25 @@ function App() {
           </p>
         </div>
         <div className='flex flex-col items-center gap-3 mb-10'>
-          <div className='flex gap-2 flex-wrap justify-center'>
-            {typeFilters.map((f) => (
-              <button
-                key={f}
-                onClick={() => {
-                  setActiveFilter(f)
-                  setRoomsFrom(1)
-                  setRoomsTo(5)
-                }}
-                className={`px-5 py-2 rounded-full border-[1.5px] text-sm cursor-pointer transition-colors font-[inherit] ${
-                  activeFilter === f
-                    ? 'bg-crimson border-crimson text-white'
-                    : 'bg-white border-[#e8e4de] text-[#5c5c5c] hover:border-crimson hover:text-crimson'
-                }`}
-              >
-                {f}
-              </button>
-            ))}
+          <div className='flex gap-2 w-full max-w-sm'>
+            {typeFilters.map(({ key, label }) => {
+              const isActive = activeTypes.has(key)
+              return (
+                <button
+                  key={key}
+                  onClick={() => toggleType(key)}
+                  className={`flex-1 px-2 py-2 rounded-full border-[1.5px] text-[13px] text-center cursor-pointer transition-colors font-[inherit] whitespace-nowrap ${
+                    isActive
+                      ? 'bg-crimson border-crimson text-white'
+                      : 'bg-white border-[#e8e4de] text-[#5c5c5c] hover:border-crimson hover:text-crimson'
+                  }`}
+                >
+                  {label}
+                </button>
+              )
+            })}
           </div>
-          {activeFilter === 'Mieszkanie' && (
+          {activeTypes.has('Mieszkanie') && !allSelected && (
             <div className='w-full max-w-sm px-2'>
               <div className='flex justify-between mb-3'>
                 <span className='text-[13px] text-[#8a8a8a]'>Liczba pokoi</span>
@@ -371,7 +402,7 @@ function App() {
               <div className='flex justify-between mt-2'>
                 {[1, 2, 3, 4, 5].map((n) => (
                   <span key={n} className='text-[11px] text-[#8a8a8a]'>
-                    {n === 1 ? 'kaw.' : n === 5 ? '5+' : n}
+                    {n >= 5 ? '5+' : n}
                   </span>
                 ))}
               </div>
@@ -379,85 +410,103 @@ function App() {
           )}
         </div>
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
-          {filtered.map((listing) => (
-            <div
-              key={listing.id}
-              className='bg-white rounded-[10px] border border-[#e8e4de] overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-[250ms] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_2px_4px_rgba(0,0,0,0.04)] hover:-translate-y-0.5'
-            >
-              <div className='relative overflow-hidden'>
-                <svg
-                  viewBox='0 0 400 240'
-                  fill='none'
-                  xmlns='http://www.w3.org/2000/svg'
-                  aria-hidden='true'
-                  className='block w-full h-auto'
-                >
-                  <rect width='400' height='240' fill='#f5f3f0' />
-                  <rect
-                    x='60'
-                    y='70'
-                    width='280'
-                    height='150'
-                    rx='2'
-                    fill='#e8e4de'
-                  />
-                  <rect
-                    x='140'
-                    y='70'
-                    width='120'
-                    height='150'
-                    fill='#ddd9d2'
-                  />
-                  <rect x='168' y='155' width='64' height='65' fill='#d0cbc3' />
-                  <polygon points='200,22 328,90 72,90' fill='#c8c2ba' />
-                </svg>
-                {listing.badge && (
-                  <span className='absolute top-3.5 left-3.5 inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-[0.3px] bg-crimson text-white z-10'>
-                    {listing.badge}
-                  </span>
-                )}
-              </div>
-              <div className='px-5 pt-[18px] pb-5'>
-                <div className='text-[12px] font-semibold tracking-[0.8px] uppercase text-crimson mb-1.5'>
-                  {listing.type === 'Mieszkanie'
-                    ? `Mieszkanie · ${listing.rooms === 1 ? 'kawalerka' : `${listing.rooms} pokoje`}`
-                    : listing.type}
-                </div>
-                <h3 className='text-[16px] font-semibold text-[#1a1a1a] mb-2 leading-snug'>
-                  {listing.title}
-                </h3>
-                <div className='flex items-center gap-1.5 text-[13px] text-[#8a8a8a] mb-3'>
-                  <svg
-                    width='14'
-                    height='14'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeWidth='2'
-                    aria-hidden='true'
-                  >
-                    <path d='M12 21s-8-7.3-8-13a8 8 0 1 1 16 0c0 5.7-8 13-8 13z' />
-                    <circle cx='12' cy='8' r='3' />
-                  </svg>
-                  {listing.location}
-                </div>
-                <div className='flex gap-3.5 text-[13px] text-[#8a8a8a] mb-4 pb-4 border-b border-[#e8e4de]'>
-                  <span>{listing.area}</span>
-                  <span>
-                    {listing.rooms} {listing.rooms === 1 ? 'pokój' : 'pokoje'}
-                  </span>
-                </div>
-                <div className='flex items-center justify-between gap-3'>
-                  <span className='text-[18px] font-bold text-[#1a1a1a]'>
-                    {listing.price}
-                  </span>
-                  <a href='#contact' className={btnSm}>
-                    Szczegóły
-                  </a>
-                </div>
-              </div>
+          {filtered.length === 0 ? (
+            <div className='col-span-full flex flex-col items-center justify-center py-20 text-center'>
+              <div className='text-5xl mb-4'>🏠</div>
+              <p className='text-[17px] font-semibold text-[#1a1a1a] mb-2'>
+                Brak ofert spełniających kryteria
+              </p>
+              <p className='text-[14px] text-[#8a8a8a]'>
+                Spróbuj zmienić filtry lub zakres liczby pokoi.
+              </p>
             </div>
-          ))}
+          ) : (
+            filtered.map((listing) => (
+              <div
+                key={listing.id}
+                className='bg-white rounded-[10px] border border-[#e8e4de] overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-[250ms] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_2px_4px_rgba(0,0,0,0.04)] hover:-translate-y-0.5'
+              >
+                <div className='relative overflow-hidden'>
+                  <svg
+                    viewBox='0 0 400 240'
+                    fill='none'
+                    xmlns='http://www.w3.org/2000/svg'
+                    aria-hidden='true'
+                    className='block w-full h-auto'
+                  >
+                    <rect width='400' height='240' fill='#f5f3f0' />
+                    <rect
+                      x='60'
+                      y='70'
+                      width='280'
+                      height='150'
+                      rx='2'
+                      fill='#e8e4de'
+                    />
+                    <rect
+                      x='140'
+                      y='70'
+                      width='120'
+                      height='150'
+                      fill='#ddd9d2'
+                    />
+                    <rect
+                      x='168'
+                      y='155'
+                      width='64'
+                      height='65'
+                      fill='#d0cbc3'
+                    />
+                    <polygon points='200,22 328,90 72,90' fill='#c8c2ba' />
+                  </svg>
+                  {listing.badge && (
+                    <span className='absolute top-3.5 left-3.5 inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-[0.3px] bg-crimson text-white z-10'>
+                      {listing.badge}
+                    </span>
+                  )}
+                </div>
+                <div className='px-5 pt-[18px] pb-5'>
+                  <div className='text-[12px] font-semibold tracking-[0.8px] uppercase text-crimson mb-1.5'>
+                    {listing.type === 'Mieszkanie'
+                      ? `Mieszkanie · ${listing.rooms === 1 ? 'kawalerka' : `${listing.rooms} pokoje`}`
+                      : listing.type}
+                  </div>
+                  <h3 className='text-[16px] font-semibold text-[#1a1a1a] mb-2 leading-snug'>
+                    {listing.title}
+                  </h3>
+                  <div className='flex items-center gap-1.5 text-[13px] text-[#8a8a8a] mb-3'>
+                    <svg
+                      width='14'
+                      height='14'
+                      viewBox='0 0 24 24'
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth='2'
+                      aria-hidden='true'
+                    >
+                      <path d='M12 21s-8-7.3-8-13a8 8 0 1 1 16 0c0 5.7-8 13-8 13z' />
+                      <circle cx='12' cy='8' r='3' />
+                    </svg>
+                    {listing.location}
+                  </div>
+                  <div className='flex gap-3.5 text-[13px] text-[#8a8a8a] mb-4 pb-4 border-b border-[#e8e4de]'>
+                    <span>{listing.area}</span>
+                    <span>
+                      {listing.rooms} {listing.rooms === 1 ? 'pokój' : 'pokoje'}
+                    </span>
+                  </div>
+                  <div className='flex items-center justify-between gap-3'>
+                    <span className='text-[18px] font-bold text-[#1a1a1a]'>
+                      {listing.price}
+                    </span>
+                    <a href='#contact' className={btnSm}>
+                      Szczegóły
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </section>
 
