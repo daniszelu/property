@@ -83,10 +83,10 @@ const inputCls =
 function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeTypes, setActiveTypes] = useState<Set<string>>(
-    new Set(['Mieszkanie', 'Dom', 'Pozostałe']),
+    new Set(['Mieszkanie']),
   )
   const [roomsFrom, setRoomsFrom] = useState<number>(1)
-  const [roomsTo, setRoomsTo] = useState<number>(5)
+  const [roomsTo, setRoomsTo] = useState<number>(4)
 
   const typeFilters: Array<{ key: string; label: string }> = [
     { key: 'Mieszkanie', label: 'Mieszkania' },
@@ -100,7 +100,6 @@ function App() {
     setActiveTypes((prev) => {
       const next = new Set(prev)
       if (next.has(key)) {
-        if (next.size === 1) return next // zostaw przynajmniej jeden
         next.delete(key)
       } else {
         next.add(key)
@@ -109,7 +108,7 @@ function App() {
     })
     if (key !== 'Mieszkanie') {
       setRoomsFrom(1)
-      setRoomsTo(5)
+      setRoomsTo(4)
     }
   }
 
@@ -124,7 +123,7 @@ function App() {
     if (
       activeTypes.has('Mieszkanie') &&
       cat === 'Mieszkanie' &&
-      (l.rooms < roomsFrom || l.rooms > roomsTo)
+      (l.rooms < roomsFrom || (roomsTo < 4 && l.rooms > roomsTo))
     )
       return false
     return true
@@ -340,7 +339,7 @@ function App() {
                 <button
                   key={key}
                   onClick={() => toggleType(key)}
-                  className={`flex-1 px-2 py-2 rounded-full border-[1.5px] text-[13px] text-center cursor-pointer transition-colors font-[inherit] whitespace-nowrap ${
+                  className={`flex-1 px-2 py-2 rounded-lg border-[1.5px] text-[13px] text-center cursor-pointer transition-colors font-[inherit] whitespace-nowrap ${
                     isActive
                       ? 'bg-crimson border-crimson text-white'
                       : 'bg-white border-[#e8e4de] text-[#5c5c5c] hover:border-crimson hover:text-crimson'
@@ -358,8 +357,8 @@ function App() {
                 <span className='text-[13px] font-semibold text-[#1a1a1a]'>
                   {roomsFrom === 1 ? 'kawalerka' : `${roomsFrom} pok.`}
                   {' – '}
-                  {roomsTo === 5
-                    ? '5+ pok.'
+                  {roomsTo === 4
+                    ? '4+ pok.'
                     : roomsTo === 1
                       ? 'kawalerka'
                       : `${roomsTo} pok.`}
@@ -369,15 +368,15 @@ function App() {
                 className='range-slider'
                 style={
                   {
-                    '--from': `${((roomsFrom - 1) / 4) * 100}%`,
-                    '--to': `${((roomsTo - 1) / 4) * 100}%`,
+                    '--from': `${((roomsFrom - 1) / 3) * 100}%`,
+                    '--to': `${((roomsTo - 1) / 3) * 100}%`,
                   } as React.CSSProperties
                 }
               >
                 <input
                   type='range'
                   min={1}
-                  max={5}
+                  max={4}
                   step={1}
                   value={roomsFrom}
                   onChange={(e) => {
@@ -389,7 +388,7 @@ function App() {
                 <input
                   type='range'
                   min={1}
-                  max={5}
+                  max={4}
                   step={1}
                   value={roomsTo}
                   onChange={(e) => {
@@ -399,10 +398,10 @@ function App() {
                   }}
                 />
               </div>
-              <div className='flex justify-between mt-2'>
-                {[1, 2, 3, 4, 5].map((n) => (
+              <div className='flex justify-between mt-2 mx-[10px]'>
+                {[1, 2, 3, 4].map((n) => (
                   <span key={n} className='text-[11px] text-[#8a8a8a]'>
-                    {n >= 5 ? '5+' : n}
+                    {n >= 4 ? '4+' : n}
                   </span>
                 ))}
               </div>
