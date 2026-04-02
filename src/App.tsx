@@ -7,6 +7,7 @@ const listings = [
     location: 'Mokotów, Warszawa',
     price: '1 250 000 zł',
     area: '87 m²',
+    areaM2: 87,
     rooms: 3,
     type: 'Mieszkanie',
     badge: 'Nowe',
@@ -17,7 +18,9 @@ const listings = [
     location: 'Wilanów, Warszawa',
     price: '3 490 000 zł',
     area: '220 m²',
+    areaM2: 220,
     rooms: 5,
+    floors: 2,
     type: 'Dom',
     badge: 'Polecane',
   },
@@ -27,6 +30,7 @@ const listings = [
     location: 'Wola, Warszawa',
     price: '560 000 zł',
     area: '38 m²',
+    areaM2: 38,
     rooms: 1,
     type: 'Mieszkanie',
     badge: null,
@@ -37,6 +41,7 @@ const listings = [
     location: 'Śródmieście, Warszawa',
     price: '5 200 000 zł',
     area: '175 m²',
+    areaM2: 175,
     rooms: 4,
     type: 'Mieszkanie',
     badge: 'Ekskluzywne',
@@ -47,6 +52,7 @@ const listings = [
     location: 'Żoliborz, Warszawa',
     price: '980 000 zł',
     area: '65 m²',
+    areaM2: 65,
     rooms: 3,
     type: 'Mieszkanie',
     badge: null,
@@ -57,6 +63,7 @@ const listings = [
     location: 'Śródmieście, Łódź',
     price: '720 000 zł',
     area: '110 m²',
+    areaM2: 110,
     rooms: 2,
     type: 'Mieszkanie',
     badge: 'Nowe',
@@ -87,6 +94,12 @@ function App() {
   )
   const [roomsFrom, setRoomsFrom] = useState<number>(1)
   const [roomsTo, setRoomsTo] = useState<number>(4)
+  const [areaFrom, setAreaFrom] = useState<number>(20)
+  const [areaTo, setAreaTo] = useState<number>(70)
+  const [domAreaFrom, setDomAreaFrom] = useState<number>(50)
+  const [domAreaTo, setDomAreaTo] = useState<number>(200)
+  const [domFloorsFrom, setDomFloorsFrom] = useState<number>(1)
+  const [domFloorsTo, setDomFloorsTo] = useState<number>(2)
 
   const typeFilters: Array<{ key: string; label: string }> = [
     { key: 'Mieszkanie', label: 'Mieszkania' },
@@ -97,18 +110,18 @@ function App() {
   const allSelected = activeTypes.size === 3
 
   const toggleType = (key: string) => {
-    setActiveTypes((prev) => {
-      const next = new Set(prev)
-      if (next.has(key)) {
-        next.delete(key)
-      } else {
-        next.add(key)
-      }
-      return next
-    })
+    setActiveTypes(new Set([key]))
     if (key !== 'Mieszkanie') {
       setRoomsFrom(1)
       setRoomsTo(4)
+      setAreaFrom(20)
+      setAreaTo(70)
+    }
+    if (key !== 'Dom') {
+      setDomAreaFrom(50)
+      setDomAreaTo(200)
+      setDomFloorsFrom(1)
+      setDomFloorsTo(2)
     }
   }
 
@@ -126,6 +139,17 @@ function App() {
       (l.rooms < roomsFrom || (roomsTo < 4 && l.rooms > roomsTo))
     )
       return false
+    if (
+      activeTypes.has('Mieszkanie') &&
+      cat === 'Mieszkanie' &&
+      (l.areaM2 < areaFrom || (areaTo < 70 && l.areaM2 > areaTo))
+    )
+      return false
+    if (activeTypes.has('Dom') && cat === 'Dom') {
+      if (l.areaM2 < domAreaFrom || (domAreaTo < 200 && l.areaM2 > domAreaTo)) return false
+      const f = (l as { floors?: number }).floors ?? 1
+      if (f < domFloorsFrom || f > domFloorsTo) return false
+    }
     return true
   })
 
@@ -350,62 +374,226 @@ function App() {
               )
             })}
           </div>
-          {activeTypes.has('Mieszkanie') && !allSelected && (
-            <div className='w-full max-w-sm px-2'>
-              <div className='flex justify-between mb-3'>
-                <span className='text-[13px] text-[#8a8a8a]'>Liczba pokoi</span>
-                <span className='text-[13px] font-semibold text-[#1a1a1a]'>
-                  {roomsFrom === 1 ? 'kawalerka' : `${roomsFrom} pok.`}
-                  {' – '}
-                  {roomsTo === 4
-                    ? '4+ pok.'
-                    : roomsTo === 1
-                      ? 'kawalerka'
-                      : `${roomsTo} pok.`}
-                </span>
-              </div>
-              <div
-                className='range-slider'
-                style={
-                  {
-                    '--from': `${((roomsFrom - 1) / 3) * 100}%`,
-                    '--to': `${((roomsTo - 1) / 3) * 100}%`,
-                  } as React.CSSProperties
-                }
-              >
-                <input
-                  type='range'
-                  min={1}
-                  max={4}
-                  step={1}
-                  value={roomsFrom}
-                  onChange={(e) => {
-                    const val = Number(e.target.value)
-                    setRoomsFrom(val)
-                    if (val > roomsTo) setRoomsTo(val)
-                  }}
-                />
-                <input
-                  type='range'
-                  min={1}
-                  max={4}
-                  step={1}
-                  value={roomsTo}
-                  onChange={(e) => {
-                    const val = Number(e.target.value)
-                    setRoomsTo(val)
-                    if (val < roomsFrom) setRoomsFrom(val)
-                  }}
-                />
-              </div>
-              <div className='flex justify-between mt-2 mx-[10px]'>
-                {[1, 2, 3, 4].map((n) => (
-                  <span key={n} className='text-[11px] text-[#8a8a8a]'>
-                    {n >= 4 ? '4+' : n}
+          {activeTypes.has('Dom') && (
+            <>
+              <div className='w-full max-w-sm px-2'>
+                <div className='flex justify-between mb-3'>
+                  <span className='text-[13px] text-[#8a8a8a]'>Kondygnacje</span>
+                  <span className='text-[13px] font-semibold text-[#1a1a1a]'>
+                    {domFloorsFrom === domFloorsTo
+                      ? domFloorsFrom === 1
+                        ? 'parterowy'
+                        : 'piętrowy'
+                      : 'parterowy – piętrowy'}
                   </span>
-                ))}
+                </div>
+                <div
+                  className='range-slider'
+                  style={
+                    {
+                      '--from': `${(domFloorsFrom - 1) * 100}%`,
+                      '--to': `${(domFloorsTo - 1) * 100}%`,
+                    } as React.CSSProperties
+                  }
+                >
+                  <input
+                    type='range'
+                    min={1}
+                    max={2}
+                    step={1}
+                    value={domFloorsFrom}
+                    onChange={(e) => {
+                      const val = Number(e.target.value)
+                      setDomFloorsFrom(val)
+                      if (val > domFloorsTo) setDomFloorsTo(val)
+                    }}
+                  />
+                  <input
+                    type='range'
+                    min={1}
+                    max={2}
+                    step={1}
+                    value={domFloorsTo}
+                    onChange={(e) => {
+                      const val = Number(e.target.value)
+                      setDomFloorsTo(val)
+                      if (val < domFloorsFrom) setDomFloorsFrom(val)
+                    }}
+                  />
+                </div>
+                <div className='flex justify-between mt-2 mx-[10px]'>
+                  <span className='text-[11px] text-[#8a8a8a]'>parterowy</span>
+                  <span className='text-[11px] text-[#8a8a8a]'>piętrowy</span>
+                </div>
               </div>
-            </div>
+              <div className='w-full max-w-sm px-2'>
+                <div className='flex justify-between mb-3'>
+                  <span className='text-[13px] text-[#8a8a8a]'>Metraż</span>
+                  <span className='text-[13px] font-semibold text-[#1a1a1a]'>
+                    {`${domAreaFrom} m²`}
+                    {' – '}
+                    {domAreaTo === 200 ? '200+ m²' : `${domAreaTo} m²`}
+                  </span>
+                </div>
+                <div
+                  className='range-slider'
+                  style={
+                    {
+                      '--from': `${((domAreaFrom - 50) / 150) * 100}%`,
+                      '--to': `${((domAreaTo - 50) / 150) * 100}%`,
+                    } as React.CSSProperties
+                  }
+                >
+                  <input
+                    type='range'
+                    min={50}
+                    max={200}
+                    step={25}
+                    value={domAreaFrom}
+                    onChange={(e) => {
+                      const val = Number(e.target.value)
+                      setDomAreaFrom(val)
+                      if (val > domAreaTo) setDomAreaTo(val)
+                    }}
+                  />
+                  <input
+                    type='range'
+                    min={50}
+                    max={200}
+                    step={25}
+                    value={domAreaTo}
+                    onChange={(e) => {
+                      const val = Number(e.target.value)
+                      setDomAreaTo(val)
+                      if (val < domAreaFrom) setDomAreaFrom(val)
+                    }}
+                  />
+                </div>
+                <div className='relative mt-2 mx-[10px] h-4'>
+                  {[50, 75, 100, 125, 150, 175, 200].map((n) => (
+                    <span
+                      key={n}
+                      className='absolute text-[11px] text-[#8a8a8a] -translate-x-1/2'
+                      style={{ left: `${((n - 50) / 150) * 100}%` }}
+                    >
+                      {n >= 200 ? '200+' : n}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+          {activeTypes.has('Mieszkanie') && !allSelected && (
+            <>
+              <div className='w-full max-w-sm px-2'>
+                <div className='flex justify-between mb-3'>
+                  <span className='text-[13px] text-[#8a8a8a]'>
+                    Liczba pokoi
+                  </span>
+                  <span className='text-[13px] font-semibold text-[#1a1a1a]'>
+                    {roomsFrom === 1 ? 'kawalerka' : `${roomsFrom} pok.`}
+                    {' – '}
+                    {roomsTo === 4
+                      ? '4+ pok.'
+                      : roomsTo === 1
+                        ? 'kawalerka'
+                        : `${roomsTo} pok.`}
+                  </span>
+                </div>
+                <div
+                  className='range-slider'
+                  style={
+                    {
+                      '--from': `${((roomsFrom - 1) / 3) * 100}%`,
+                      '--to': `${((roomsTo - 1) / 3) * 100}%`,
+                    } as React.CSSProperties
+                  }
+                >
+                  <input
+                    type='range'
+                    min={1}
+                    max={4}
+                    step={1}
+                    value={roomsFrom}
+                    onChange={(e) => {
+                      const val = Number(e.target.value)
+                      setRoomsFrom(val)
+                      if (val > roomsTo) setRoomsTo(val)
+                    }}
+                  />
+                  <input
+                    type='range'
+                    min={1}
+                    max={4}
+                    step={1}
+                    value={roomsTo}
+                    onChange={(e) => {
+                      const val = Number(e.target.value)
+                      setRoomsTo(val)
+                      if (val < roomsFrom) setRoomsFrom(val)
+                    }}
+                  />
+                </div>
+                <div className='flex justify-between mt-2 mx-2'>
+                  {[1, 2, 3, 4].map((n) => (
+                    <span key={n} className='text-[11px] text-[#8a8a8a]'>
+                      {n >= 4 ? '4' : n}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className='w-full max-w-sm px-2'>
+                <div className='flex justify-between mb-3'>
+                  <span className='text-[13px] text-[#8a8a8a]'>Metraż</span>
+                  <span className='text-[13px] font-semibold text-[#1a1a1a]'>
+                    {`${areaFrom} m²`}
+                    {' – '}
+                    {areaTo === 70 ? '70+ m²' : `${areaTo} m²`}
+                  </span>
+                </div>
+                <div
+                  className='range-slider'
+                  style={
+                    {
+                      '--from': `${((areaFrom - 20) / 50) * 100}%`,
+                      '--to': `${((areaTo - 20) / 50) * 100}%`,
+                    } as React.CSSProperties
+                  }
+                >
+                  <input
+                    type='range'
+                    min={20}
+                    max={70}
+                    step={10}
+                    value={areaFrom}
+                    onChange={(e) => {
+                      const val = Number(e.target.value)
+                      setAreaFrom(val)
+                      if (val > areaTo) setAreaTo(val)
+                    }}
+                  />
+                  <input
+                    type='range'
+                    min={20}
+                    max={70}
+                    step={10}
+                    value={areaTo}
+                    onChange={(e) => {
+                      const val = Number(e.target.value)
+                      setAreaTo(val)
+                      if (val < areaFrom) setAreaFrom(val)
+                    }}
+                  />
+                </div>
+                <div className='flex justify-between mt-2 mx-1'>
+                  {[20, 30, 40, 50, 60, 70].map((n) => (
+                    <span key={n} className='text-[11px] text-[#8a8a8a]'>
+                      {n >= 70 ? '70' : n}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </>
           )}
         </div>
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
